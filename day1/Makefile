@@ -1,6 +1,13 @@
 
-_build/bin/day1: day1.dylan library.dylan
+DAY=day1
+
+EXE=_build/bin/${DAY}
+
+${EXE}: day1.dylan library.dylan
 	dylan-compiler -build day1.lid
 
-check: _build/bin/day1
-	_build/bin/day1 < day1.input
+check: ${EXE}
+	${EXE} < day1.input
+
+clean:
+	rm -rf _build
