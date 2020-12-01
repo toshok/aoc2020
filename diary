@@ -5,7 +5,7 @@ day1:
 * I should really figure out if vscode has support for dylan.  not enjoying the vim life.
 * re: dylan, weird separation of code from imports.  "use" things inside library.dylan?  I'm not building a library.  why are there two sets of use there?
   there's no clear signal that I've seen for what needs to be "used" to make symbols accessible.  docs feel like I have to read prose to figure
-  it out.
+  it out.  speaking of docs, don't get me started.
 * ok _finally_ landed on a formulation of parsing the input file that worked, after beating my head against with-open-file for hours.  after that it was easy:
     1. figure out how to convert a string to integer.  string-to-integer, duh.
     2. write the doubly nested loop
