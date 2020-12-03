@@ -21,3 +21,37 @@
     "how do I split a line at a character?" and "how do I iterate/access characters in a string?"
   * used `split` and `count-substrings`
   * going to chalk this up as an attempt to be reasonably fast (not top of leaderboard but wayyyyy faster) and to shake out major fundamental problems.
+
+# day3
+
+* tried getting fancy with a `block()` but ultimately didn't need it.  shame, I like the signal when reading code "WHOA THERE'S AN EARLY RETURN IN HERE".
+* frustrated by compiler error for this code:
+```dylan
+  for (i :: <integer> from 0 to size(lines) - 1 by down)
+    let line = lines[i];
+    if(line[x] == '#')
+      trees := trees + 1;
+    end fi;
+    x := x + right;
+    x := modulo(x, size(line));
+  end for;
+```
+
+The error was:
+
+```
+/Users/toshok/src/aoc2020/day3/day3.dylan:12.5-17.32: Serious warning - Invalid syntax for fbody in for macro call.
+          --------------------
+  12      let line = lines[i];
+  13      if(line[x] == '#')
+  14        trees := trees + 1;
+  15      end fi;
+  16      x := x + right;
+  17      x := modulo(x, size(line));
+      -------------------------------
+```
+
+Which... not the most helpful.  Anyway, it's that line 15 there.  `end fi;` shoudl be `end if;`  Found the usual way:  comment out everything and introduce bits at a time.
+* new dylan learned:
+  * `modulo` is a function.  `x % y` === `modulo(x, y)`.
+  * `by <value>` in for loops.  e.g. `for (i :: <integer> from 0 to size(lines) - 1 by down)` ~= `for (let i = 0; i <= sizeof(lines) - 1; i += down)`
