@@ -3,11 +3,11 @@ DAY=day1
 
 EXE=_build/bin/${DAY}
 
-${EXE}: day1.dylan library.dylan
-	dylan-compiler -build day1.lid
+${EXE}: ${DAY}.dylan library.dylan
+	dylan-compiler -build ${DAY}.lid
 
 check: ${EXE}
-	${EXE} < day1.input
+	${EXE} < ${DAY}.input
 
 clean:
 	rm -rf _build
