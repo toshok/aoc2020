@@ -3,10 +3,22 @@ Synopsis:
 Author: 
 Copyright: 
 
+// a few comments, without having read the problem description...
+
 define function password-valid-part1
     (min :: <integer>, max :: <integer>, letter :: <string>, password :: <string>)
 
   let count = count-substrings(password, letter);
+// If `letter` is really a single character then this can be made much faster
+// by writing a function to count characters in a string. Unfortunately we don't
+// have one built in but something like this:
+//   let count = 0;
+//   do(method (c)
+//        if (c = letter) count := count + 1 end
+//      end,
+//      password)
+// We really should have something in common-dylan for this.
+// [later] hmm, maybe letter really is a string. dunno. :-)
 
   count >= min & count <= max;
 end function password-valid-part1;
@@ -18,6 +30,9 @@ define function part1
 
   for (i :: <integer> from 0 to size(lines) - 1)
     let line = lines[i];
+    
+    // above you probably want `for (line in lines)`
+    
     let strings = split(line, ":");
     let left = strip(strings[0]);
 
@@ -78,6 +93,12 @@ end function part2;
 define function main
     (name :: <string>, arguments :: <vector>)
 
+  // When collecting items into a vector it's generally much more efficient
+  // to use a `<stretchy-vector>` and add elements to it with `add!`.
+  // https://github.com/dylan-lang/opendylan/blob/master/sources/dylan/vector.dylan#L132
+  // A different alternative would be to use split(read-to-end(*standard-input*), "\n")
+  // but it wouldn't handle \r\n correctly.
+  
   let lines = make(<vector>, of: <string>);
 
   until(stream-at-end?(*standard-input*))
