@@ -51,7 +51,7 @@ The error was:
       -------------------------------
 ```
 
-Which... not the most helpful.  Anyway, it's that line 15 there.  `end fi;` shoudl be `end if;`  Found the usual way:  comment out everything and introduce bits at a time.
+Which... not the most helpful.  Anyway, it's that line 15 there.  `end fi;` should be `end if;`  Found the usual way:  comment out everything and introduce bits at a time.
 * new dylan learned:
   * `modulo` is a function.  `x % y` === `modulo(x, y)`.
   * `by <value>` in for loops.  e.g. `for (i :: <integer> from 0 to size(lines) - 1 by down)` ~= `for (let i = 0; i <= sizeof(lines) - 1; i += down)`
