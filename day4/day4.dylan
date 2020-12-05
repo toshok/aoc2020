@@ -3,144 +3,176 @@ Synopsis:
 Author: 
 Copyright: 
 
-define constant <passport> = <string-table>;
-
-define function is-valid-part1? (p :: <passport> ) => (boolean)
-  element(p, "byr", default: "") ~= "" & // (Birth Year)
-  element(p, "iyr", default: "") ~= "" & // (Issue Year)
-  element(p, "eyr", default: "") ~= "" & // (Expiration Year)
-  element(p, "hgt", default: "") ~= "" & // (Height)
-  element(p, "hcl", default: "") ~= "" & // (Hair Color)
-  element(p, "ecl", default: "") ~= "" & // (Eye Color)
-  element(p, "pid", default: "") ~= "" & // (Passport ID)
-  #t //element(p, "cid", default: "") ~= ""   // (Country ID)
-end function is-valid-part1?;
-
-define function is-integer-between(str :: <string>, lower :: <integer>, upper :: <integer>) => (boolean)
-  block (finished)
-    if(size(str) = 0)
-      finished(#f)
-    end if;
-    let val = string-to-integer(str);
-    if(val < lower | val > upper)
-      finished(#f)
-    end if;
-    #t
-  end
-end function is-integer-between;
-
-define function is-valid-height(str :: <string>) => (boolean)
-  block (finished)
-    if(size(str) = 0)
-      finished(#f)
-    end if;
-
-    let val = string-to-integer(str);
-    if(ends-with?(str, "cm"))
-      finished(val >= 150 & val <= 193);
-    end if;
-    if(ends-with?(str, "in"))
-      finished(val >= 59 & val <= 87);
-    end if;
-    #f
-  end
-end function is-valid-height;
-
-define function is-valid-eyecolor(str :: <string>) => (boolean)
-  str = "amb" |
-  str = "blu" |
-  str = "brn" |
-  str = "gry" |
-  str = "grn" |
-  str = "hzl" |
-  str = "oth"
-end function is-valid-eyecolor;
-
 define constant $haircolor-re :: <regex> = compile-regex("^#[0-9a-f]{6}$");
 define constant $passportid-re :: <regex> = compile-regex("^[0-9]{9}$");
 
-define function matches-regex(str :: <string>, re :: <regex>) => (boolean)
-  let match :: false-or(<regex-match>) = regex-search(re, str);
-  if(match == #f)
-    #f
-  else
-    #t
-  end if
-end function matches-regex;
-
-define function is-valid-part2? (p :: <passport> ) => (boolean)
-  block (finished)
-    is-integer-between(element(p, "byr", default: ""), 1920, 2002) &
-    is-integer-between(element(p, "iyr", default: ""), 2010, 2020) &
-    is-integer-between(element(p, "eyr", default: ""), 2020, 2030) &
-    is-valid-height(element(p, "hgt", default: "")) &
-    matches-regex(element(p, "hcl", default: ""), $haircolor-re) &
-    is-valid-eyecolor(element(p, "ecl", default: "")) &
-    matches-regex(element(p, "pid", default: ""), $passportid-re) &
-    #t //element(p, "cid", default: "") ~= ""   // (Country ID)
-  end
-end function is-valid-part2?;
+define function always-valid(val :: <string>) #t end function always-valid;
+define function never-valid(val :: <string>) #f end function never-valid;
 
 
-define function parse-passports
+define function validate-is-integer-between(lower :: <integer>, upper :: <integer>)
+  method(str :: <string>)
+    block (finished)
+      if(size(str) = 0)
+        finished(#f)
+      end if;
+      let val = string-to-integer(str);
+      if(val < lower | val > upper)
+        finished(#f)
+      end if;
+      #t
+    end block
+  end method
+end function validate-is-integer-between;
+
+define function validate-height()
+  method(str :: <string>)
+    block (finished)
+      if(size(str) = 0)
+        finished(#f)
+      end if;
+
+      let val = string-to-integer(str);
+      if(ends-with?(str, "cm"))
+        finished(val >= 150 & val <= 193);
+      end if;
+      if(ends-with?(str, "in"))
+        finished(val >= 59 & val <= 87);
+      end if;
+      #f
+    end block
+  end method
+end function validate-height;
+
+define function validate-eyecolor()
+  method(str :: <string>)
+    str = "amb" |
+    str = "blu" |
+    str = "brn" |
+    str = "gry" |
+    str = "grn" |
+    str = "hzl" |
+    str = "oth"
+  end method
+end function validate-eyecolor;
+
+define function validate-matches-regex(re :: <regex>)
+  method(str :: <string>)
+    let match :: false-or(<regex-match>) = regex-search(re, str);
+    if(match == #f)
+      #f
+    else
+      #t
+    end if
+  end method
+end function validate-matches-regex;
+
+
+define function validate-passport-field
+    (field :: <string>, value :: <string>, validators :: <string-table>)
+
+  let validator = element(validators, field, default: never-valid);
+  validator(value)
+end function validate-passport-field;
+
+
+define function validate-passport-block
+    (passport-block :: <vector>, validators :: <string-table>)
+
+    // this assumes fields aren't repeated...
+    let valid-fields = 0;
+    for (i :: <integer> from 0 to size(passport-block) - 1)
+      let line = passport-block[i];
+      let kvs = split(line, " ");
+      for(kvi :: <integer> from 0 to size(kvs) - 1)
+        
+        let kv = split(kvs[kvi], ":");
+        // we ignore cid here, since it doesn't contribute to the valid field count requirement
+        if (kv[0] ~= "cid" & validate-passport-field(kv[0], kv[1], validators))
+          valid-fields := valid-fields + 1;
+        end if;
+      end for;
+    end for;
+
+    valid-fields = 7;
+end validate-passport-block;
+
+define function split-passport-blocks
     (lines :: <vector>)
 
-  let passports = make(<vector>, of: <passport>);
+  let blocks = make(<vector>, of: <vector>);
 
-  let p = make(<passport>);
-
+  let start-idx = 0;
   for (i :: <integer> from 0 to size(lines) - 1)
-    let l = lines[i];
     if(size(lines[i]) == 0)
-      passports := add(passports, p);
-      p := make(<passport>);
-    else
-
-      let kvs = split(l, " ");
-      for(kvi :: <integer> from 0 to size(kvs) - 1)
-        let kv = split(kvs[kvi], ":");
-        element-setter(kv[1], p, kv[0]);
-      end for;
+      let passport-block = copy-sequence(lines, start: start-idx, end: i);
+      blocks := add(blocks, passport-block);
+      start-idx := i + 1;
     end if;
   end for;
 
-  passports := add(passports, p);
+  let passport-block = copy-sequence(lines, start: start-idx);
+  blocks := add(blocks, passport-block);
+  blocks
+end function split-passport-blocks;
 
-  passports
-end function parse-passports;
+define function count-valid(seq)
+  reduce(
+    method(acc, valid) 
+      if (valid)
+        acc + 1
+      else
+        acc
+      end if;
+    end method,
+    0,
+    seq)
+end function count-valid;
+
+define constant *part1-validators* = block()
+  let validators = make(<string-table>);
+  validators["byr"] := always-valid;
+  validators["iyr"] := always-valid;
+  validators["eyr"] := always-valid;
+  validators["hgt"] := always-valid;
+  validators["hcl"] := always-valid;
+  validators["ecl"] := always-valid;
+  validators["pid"] := always-valid;
+  validators["cid"] := always-valid;
+  validators
+end block;
+
+define constant *part2-validators* = block()
+  let validators = make(<string-table>);
+  validators["byr"] := validate-is-integer-between(1920, 2002);
+  validators["iyr"] := validate-is-integer-between(2010, 2020);
+  validators["eyr"] := validate-is-integer-between(2020, 2030);
+  validators["hgt"] := validate-height();
+  validators["hcl"] := validate-matches-regex($haircolor-re);
+  validators["ecl"] := validate-eyecolor();
+  validators["pid"] := validate-matches-regex($passportid-re);
+  validators["cid"] := always-valid;
+  validators
+end block;
+
+define function validate-passport-blocks
+    (passport-blocks :: <vector>, validators :: <string-table>)
+
+    let valid-block = method(passport-block)
+        validate-passport-block(passport-block, validators)
+      end method;
+
+  count-valid(map(valid-block, passport-blocks));
+end validate-passport-blocks;
 
 define function part1
-    (passports :: <vector>)
-
-  let valid = 0;
-  let invalid = 0;
-
-  for (i :: <integer> from 0 to size(passports) - 1)
-    if(is-valid-part1?(passports[i]))
-      valid := valid + 1;
-    else
-      invalid := invalid + 1;
-    end if;
-  end for;
-
-  format-out("part1: %d valid, %d invalid\n", valid, invalid)
+    (passport-blocks :: <vector>)
+  format-out("part1: %d valid\n", validate-passport-blocks(passport-blocks, *part1-validators*));
 end function part1;
 
 define function part2
-    (passports :: <vector>)
-
-  let valid = 0;
-  let invalid = 0;
-
-  for (i :: <integer> from 0 to size(passports) - 1)
-    if(is-valid-part2?(passports[i]))
-      valid := valid + 1;
-    else
-      invalid := invalid + 1;
-    end if;
-  end for;
-
-  format-out("part2: %d valid, %d invalid\n", valid, invalid)
+    (passport-blocks :: <vector>)
+  format-out("part2: %d valid\n", validate-passport-blocks(passport-blocks, *part2-validators*));
 end function part2;
 
 define function main
@@ -153,10 +185,9 @@ define function main
     lines := add(lines, line)
   end until;
 
-  let passports = parse-passports(lines);
-
-  part1(passports);
-  part2(passports);
+  let passports-blocks = split-passport-blocks(lines);
+  part1(passports-blocks);
+  part2(passports-blocks);
 
   exit-application(0);
 end function main;
