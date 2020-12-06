@@ -55,3 +55,41 @@ Which... not the most helpful.  Anyway, it's that line 15 there.  `end fi;` shou
 * new dylan learned:
   * `modulo` is a function.  `x % y` === `modulo(x, y)`.
   * `by <value>` in for loops.  e.g. `for (i :: <integer> from 0 to size(lines) - 1 by down)` ~= `for (let i = 0; i <= sizeof(lines) - 1; i += down)`
+
+# day6
+
+* finally figured out that I can replace
+```dylan
+  for (i :: <integer> from 0 to size(group) - 1)
+    let line = group[i];
+```
+
+with
+
+```dylan
+  for (line in group)
+```
+
+rejoice.
+
+* can't find any documentation on how to subclass `<table>`.  time to grovel in opendylan source.
+* also can't figure out if there's an easy way to convert a `<character>` to a `<string>`.  I presume there is, but...
+* I would _kill_ for backtraces to include line numbers:
+
+```
+{<string-table>: size 0} is not of type {<class>: <string>}
+Backtrace:
+  invoke-debugger:internal:dylan##1 + 0x29
+  default-handler:dylan:dylan##1 + 0x12
+  default-last-handler:common-dylan-internals:common-dylan##0 + 0x2a3
+  error:dylan:dylan##0 + 0x26
+  type-check-error:internal:dylan + 0x6d
+  gethash:internal:dylan + 0x11c
+  count-all-yes:day6:day6 + 0x1cb
+  map-as-one:internal:dylan##5 + 0x5e
+  part2:day6:day6 + 0x4a
+  main:day6:day6 + 0xeb
+  main + 0x19
+```
+
+maybe I'm missing compiler args? (debug info?)
