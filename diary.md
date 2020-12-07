@@ -93,3 +93,52 @@ Backtrace:
 ```
 
 maybe I'm missing compiler args? (debug info?)
+
+# day7
+
+first problem that required building actual objects with slots
+
+I did find one weird thing.  for these object types:
+
+```dylan
+define class colored-bag (<object>)
+  slot color :: <string>;
+
+  slot contains :: <vector>; // of counted-colored-bag
+  slot contained-in :: <vector>; // of colored-bag
+end class colored-bag;
+
+define class counted-colored-bag(<object>)
+  slot count :: <integer>;
+  slot color :: <string>;
+end class counted-colored-bag;
+```
+
+This works:
+```dylan
+    bag := make(colored-bag);
+    bag.color := bag-color;
+    bag.contains := make(<vector>, of: counted-colored-bag);
+    bag.contained-in := make(<vector>, of: colored-bag);
+```
+
+but this doesn't:
+```dylan
+    bag := make(colored-bag,
+        color: bag-color,
+        contains: make(<vector>, of: counted-colored-bag),
+        contained-in: make(<vector>, of: colored-bag));
+```
+
+but it only seems to cause problems for the two `<vector>` slots.  `color` seems fine with either form.
+
+adding `required-init-keyword` fixes things, though, as in:
+
+```dylan
+define class colored-bag (<object>)
+  slot color :: <string>, required-init-keyword: color:;
+
+  slot contains :: <vector>, required-init-keyword: contains:; // of counted-colored-bag
+  slot contained-in :: <vector>, required-init-keyword: contained-in:; // of colored-bag
+end class colored-bag;
+```
