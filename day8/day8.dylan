@@ -42,18 +42,21 @@ define function execute
       counts[ip] := counts[ip] + 1;
       let instr = instructions[ip];
 
-      if(instr.opcode = *acc*)
-        acc := acc + instr.operand;
-        ip := ip + 1;
-        continue();
-      end if;
+      select(instr.opcode)
+        *acc* =>
+              acc := acc + instr.operand;
+              ip := ip + 1;
+              continue();
 
-      if(instr.opcode = *jmp*)
-        ip := ip + instr.operand;
-        continue();
-      end if;
+        *jmp* =>
+              ip := ip + instr.operand;
+              continue();
 
-      ip := ip + 1;
+        *nop* =>
+              ip := ip + 1;
+              continue();
+      end select;
+
     end block;
   end while;
 
@@ -63,25 +66,29 @@ end function execute;
 define function part2
     (instructions :: <vector>)
 
-  let (acc, ip) =
+  let acc =
   block(finished)
     for (instr in instructions)
-      if (instr.opcode = *jmp*)
-        instr.opcode := *nop*;
-        let (lacc, lip) = execute(instructions);
-        instr.opcode := *jmp*;
-        if(lip = size(instructions))
-          finished(lacc, lip);
-        end if;
-      end if;
-      if (instr.opcode = *nop*)
-        instr.opcode := *jmp*;
-        let (lacc, lip) = execute(instructions);
-        instr.opcode := *nop*;
-        if(lip = size(instructions))
-          finished(lacc, lip);
-        end if;
-      end if
+
+      select(instr.opcode)
+        *jmp* =>
+              instr.opcode := *nop*;
+              let (acc_, ip_) = execute(instructions);
+              instr.opcode := *jmp*;
+              if(ip_ = size(instructions))
+                finished(acc_);
+              end if;
+
+        *nop* =>
+              instr.opcode := *jmp*;
+              let (acc_, ip_) = execute(instructions);
+              instr.opcode := *nop*;
+              if(ip_ = size(instructions))
+                finished(acc_);
+              end if;
+
+        *acc* => // nothing to do for acc instructions
+      end select;
     end for;
   end block;
 
