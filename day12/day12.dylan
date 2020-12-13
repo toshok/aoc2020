@@ -72,8 +72,6 @@ define function rotate-waypoint
 
   amount := floor/(amount, 90);
 
-  format-out("rotate-waypoint: %s %s %s, %s\n", waypoint-x, waypoint-y, amount, cw);
-
   if(cw)
     for(i from 1 to amount)
       let new-waypoint-x = waypoint-y;
@@ -105,11 +103,8 @@ define function part2
 
   block()
     for(dir in directions)
-      format-out("ship = %d %d, waypoint = %d %d\n", ship-x, ship-y, waypoint-x, waypoint-y);
       let action = dir[0];
       let amount = string-to-integer(copy-sequence(dir, start: 1));
-      format-out("%s =>\n", dir);
-      force-out();
       select(action)
         'N' => waypoint-y := waypoint-y + amount;
         'S' => waypoint-y := waypoint-y - amount;
