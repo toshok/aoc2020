@@ -1,0 +1,24 @@
+Module: day13
+Synopsis: 
+Author: 
+Copyright: 
+
+define function part1
+    (lines :: <vector>)
+end function part1;
+
+define function main
+    (name :: <string>, arguments :: <vector>)
+  let lines = make(<vector>, of: <string>);
+
+  until(stream-at-end?(*standard-input*))
+    let line = read-line(*standard-input*);
+    lines := add(lines, line);
+  end until;
+
+  part1(lines);
+
+  exit-application(0);
+end function main;
+
+main(application-name(), application-arguments());
