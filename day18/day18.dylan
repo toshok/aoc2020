@@ -31,8 +31,6 @@ end function parse-expression-from-tokens;
 
 define function parse-subexpression
     (tokens :: <sequence>, idx :: <integer>)
-  format-out("parse-subexpression, rest = %s!\n", join(copy-sequence(tokens, start: idx), " "));
-  force-out();
   let depth = 0;
   let end-term = block(break)
     for (i :: <integer> from idx to size(tokens) - 1)
@@ -65,59 +63,44 @@ define function parse-subexpression
   sub-token-list[0] := copy-sequence(first-token, start: 1);
   sub-token-list[size(sub-token-list) - 1] := copy-sequence(last-token, start: 0, end: size(last-token) - 1);
 
-  format-out("subexpression tokens = %s\n", join(sub-token-list, " "));
-  force-out();
-
-
   values(parse-expression-from-tokens(sub-token-list), end-term + 1);
 end function parse-subexpression;
 
-define function eval-expression-part1
+define function find-op-index-part2
     (tree :: <deque>)
-
-  while (size(tree) > 1)
-    let lhs = eval-term(pop(tree), eval-expression-part1);
-    let operator = pop(tree);
-    let rhs = eval-term(pop(tree), eval-expression-part1);
-
-    let v = select(operator[0])
-      '+' => lhs + rhs;
-      '*' => lhs * rhs;
-    end select;
-
-    push(tree, v);
-  end while;
-
-  tree[0]
-end function eval-expression-part1;
-
-define function find-first-op-index
-    (tree :: <deque>)
-  let earliest-mult = #f;
   block(finished)
-    for (i from 0 to size(tree) - 1)
-      if (tree[i] = "*" & earliest-mult = #f)
-        earliest-mult := i;
-      end if;
+    for (i from 1 to size(tree) - 1 by 2)
       if (tree[i] = "+")
         finished(i);
       end if;
     end for;
-    earliest-mult;
+    // if we get here, there were no + in the expression, so the first * will be at index 1
+    1
   end block;
-end function find-first-op-index;
+end function find-op-index-part2;
+
+define function find-op-index-part1
+    (tree :: <deque>)
+  // there's no precendence to worry about here - eval left to right, so the first op
+  // is the one at index 1.
+  1
+end function find-op-index-part1;
 
 define function eval-expression-part2
-    (tree :: <deque>)
+    (tree :: <deque>, op-index-finder)
 
   while (size(tree) > 1)
-    print-object(tree, *standard-output*);
-    force-out();
-
-    let op-idx = find-first-op-index(tree);
-    let lhs = eval-term(tree[op-idx - 1], eval-expression-part2);
+    let op-idx = op-index-finder(tree);
+    let lhs = eval-term(
+                tree[op-idx - 1],
+                method(term)
+                  eval-expression-part2(term, op-index-finder)
+                end method);
     let operator = tree[op-idx];
-    let rhs = eval-term(tree[op-idx + 1], eval-expression-part2);
+    let rhs = eval-term(tree[op-idx + 1],
+                method(term)
+                  eval-expression-part2(term, op-index-finder)
+                end method);
 
     let v = select(operator[0])
       '+' => lhs + rhs;
@@ -145,7 +128,7 @@ define function part1
 
   let sum = 0;
   for (line in lines)
-    let v = eval-expression-part1(parse-expression(line));
+    let v = eval-expression-part2(parse-expression(line), find-op-index-part1);
     sum := sum + v;
   end for;
 
@@ -157,7 +140,7 @@ define function part2
 
   let sum = 0;
   for (line in lines)
-    let v = eval-expression-part2(parse-expression(line));
+    let v = eval-expression-part2(parse-expression(line), find-op-index-part2);
     sum := sum + v;
   end for;
 
