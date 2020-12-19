@@ -84,12 +84,7 @@ define function part1
   for (i :: <integer> from idx to size(lines) - 1)
     let match = regex-search(rule-regex, lines[i]);
 
-    print-object(match, *standard-output*);
-    force-out();
-
     if (match)
-      format-out("line %d: %s matches\n", i, lines[i]);
-      force-out();
       count := count + 1;
     end if;
   end for;
@@ -98,12 +93,19 @@ define function part1
 end function part1;
 
 define function check-line(line, rule-42, rule-31)
+  // We have some number of rule 42's, followed by some other number of rule 31's.
+  // the only constraint we have is that there must be more rule 42's then 31's.
+  // so we brute force it and check all combinations with rule 42 counts between
+  // 2 (we must have at least one rule 31, so must have at least 2 42) and 10 (which
+  // is just a guess on upper bound.)
   block(finished)
     for (i42 from 2 to 10)
       for (i31 from 1 to i42 - 1)
         let regex = compile-regex(
-              concatenate("^((", rule-42, "){", integer-to-string(i42), "})",
-                          "((", rule-31, "){", integer-to-string(i31), "})$"));
+              concatenate("^"
+                          "(", rule-42, "){", integer-to-string(i42), "}",
+                          "(", rule-31, "){", integer-to-string(i31), "}",
+                          "$"));
         if (regex-search(regex, line))
           finished(#t);
         end if;
@@ -127,20 +129,12 @@ define function part2
   // 8: 42 | 42 8
   // 11: 42 31 | 42 11 31
 
-  // This means we have some number of 42s, followed by some other number of 31s.  the number
-  // of 42s must be larger than the number of 31s, but that's it.
+  // so we only need these rules and encode the logic to match ranges of them directly in the
+  // regexp (in check-line).
 
   for (i :: <integer> from idx to size(lines) - 1)
-    format-out("line %d: checking\n", i - idx);
-    force-out();
-
-    let match = check-line(lines[i], rules[42], rules[31]);
-
-    if (match)
-      format-out("  match\n");
+    if (check-line(lines[i], rules[42], rules[31]))
       count := count + 1;
-    else
-      format-out("  no match\n");
     end if;
   end for;
 
@@ -157,7 +151,7 @@ define function main
     lines := add(lines, line);
   end until;
 
-  // part1(lines);
+  part1(lines);
   part2(lines);
 
   exit-application(0);
