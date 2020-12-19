@@ -86,7 +86,7 @@ define function find-op-index-part1
   1
 end function find-op-index-part1;
 
-define function eval-expression-part2
+define function eval-expression
     (tree :: <vector>, op-index-finder)
 
   while (size(tree) > 1)
@@ -94,12 +94,12 @@ define function eval-expression-part2
     let lhs = eval-term(
                 tree[op-idx - 1],
                 method(term)
-                  eval-expression-part2(term, op-index-finder)
+                  eval-expression(term, op-index-finder)
                 end method);
     let operator = tree[op-idx];
     let rhs = eval-term(tree[op-idx + 1],
                 method(term)
-                  eval-expression-part2(term, op-index-finder)
+                  eval-expression(term, op-index-finder)
                 end method);
 
     let v = select(operator[0])
@@ -111,7 +111,7 @@ define function eval-expression-part2
   end while;
 
   tree[0]
-end function eval-expression-part2;
+end function eval-expression;
 
 define function eval-term(term, tree-evaluator)
   if (instance?(term, <string>))
@@ -126,11 +126,12 @@ end function eval-term;
 define function part1
     (lines :: <vector>)
 
-  let sum = 0;
-  for (line in lines)
-    let v = eval-expression-part2(parse-expression(line), find-op-index-part1);
-    sum := sum + v;
-  end for;
+  let sum = reduce(
+    method(acc, line)
+      acc + eval-expression(parse-expression(line), find-op-index-part1)
+    end method,
+    0,
+    lines);
 
   format-out("part1: %d\n", sum);
 end function part1;
@@ -138,11 +139,12 @@ end function part1;
 define function part2
     (lines :: <vector>)
 
-  let sum = 0;
-  for (line in lines)
-    let v = eval-expression-part2(parse-expression(line), find-op-index-part2);
-    sum := sum + v;
-  end for;
+  let sum = reduce(
+    method(acc, line)
+      acc + eval-expression(parse-expression(line), find-op-index-part2)
+    end method,
+    0,
+    lines);
 
   format-out("part2: %d\n", sum);
 end function part2;
