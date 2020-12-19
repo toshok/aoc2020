@@ -13,15 +13,15 @@ end function parse-expression;
 
 define function parse-expression-from-tokens
     (tokens :: <sequence>)
-  let tree = make(<deque>);
+  let tree = make(<vector>);
   let idx = 0;
   while (idx < size(tokens))
     if(tokens[idx][0] == '(')
       let (subtree, next-idx) = parse-subexpression(tokens, idx);
-      tree := push-last(tree, subtree);
+      tree := add(tree, subtree);
       idx := next-idx;
     else
-      tree := push-last(tree, tokens[idx]);
+      tree := add(tree, tokens[idx]);
       idx := idx + 1;
     end if;
   end while;
@@ -67,7 +67,7 @@ define function parse-subexpression
 end function parse-subexpression;
 
 define function find-op-index-part2
-    (tree :: <deque>)
+    (tree :: <vector>)
   block(finished)
     for (i from 1 to size(tree) - 1 by 2)
       if (tree[i] = "+")
@@ -80,14 +80,14 @@ define function find-op-index-part2
 end function find-op-index-part2;
 
 define function find-op-index-part1
-    (tree :: <deque>)
+    (tree :: <vector>)
   // there's no precendence to worry about here - eval left to right, so the first op
   // is the one at index 1.
   1
 end function find-op-index-part1;
 
 define function eval-expression-part2
-    (tree :: <deque>, op-index-finder)
+    (tree :: <vector>, op-index-finder)
 
   while (size(tree) > 1)
     let op-idx = op-index-finder(tree);
