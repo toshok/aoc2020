@@ -42,29 +42,24 @@ define function pick-up-next-three(current-cup :: <cup>)
 end function pick-up-next-three;
 
 define function pick-destination(current-cup :: <cup>, picked-up :: <cup>, highest-label :: <integer>)
-  let exclude-above-cup = make(<table>);
-  let exclude-below-cup = make(<table>);
+  let excluded = make(<table>);
 
   let c = picked-up;
   for (p from 1 to 3)
-    if (c.label < current-cup.label)
-      exclude-below-cup[c.label] := #t;
-    else
-      exclude-above-cup[c.label] := #t;
-    end if;
+    excluded[c.label] := #t;
     c := c.next;
   end for;
 
   let cup-to-find = block(found-cup)
     // first we try the below cups, iterating from cup-1 to 0 until we find one not in the hash
     for (c from current-cup.label - 1 to 1 by -1)
-      if (~element(exclude-below-cup, c, default: #f))
+      if (~element(excluded, c, default: #f))
         found-cup(c);
       end if;
     end for;
     // next we loop from the highest-label down, same deal
     for (c from highest-label to current-cup.label + 1 by -1)
-      if (~element(exclude-above-cup, c, default: #f))
+      if (~element(excluded, c, default: #f))
         found-cup(c);
       end if;
     end for;
